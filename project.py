@@ -24,12 +24,12 @@ def function_wrapper(filepath):
 
 class AST_C(NodeVisitor):
   def __init__(self):
-    self.written_stack = []
+    self.written_set = set()
     self.var_set = set()
 
   def visit_Assignment(self, assignment):
     if isinstance(assignment.lvalue, ID):
-      self.written_stack.append(assignment.lvalue.name)
+      self.written_set.add(assignment.lvalue.name)
     
     if isinstance(assignment.rvalue, BinaryOp):
       self.visit_BinaryOp(assignment.rvalue)
@@ -50,7 +50,8 @@ class FunctionalTranslator:
   
   def __str__(self):
     params = ', '.join(self.ast_c.var_set)
-    return "fun block_function({}) returns {}".format(params, self.ast_c.written_stack[-1])
+    return_tuple = '(' + ', '.join(self.ast_c.written_set) + ')'
+    return "fun block_function({}) returns {}".format(params, return_tuple)
 
 if __name__ == "__main__":
   directory_path = "./inputs"
