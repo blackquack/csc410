@@ -150,10 +150,9 @@ class BinaryOp(Node):
 
 
 class Constant(Node):
-    __slots__ = ('type', 'value', 'coord', '__weakref__')
+    __slots__ = ('value', 'coord', '__weakref__')
 
-    def __init__(self, type, value, coord=None):
-        self.type = type
+    def __init__(self , value, coord=None):
         self.value = value
         self.coord = coord
 
