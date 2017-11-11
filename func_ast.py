@@ -123,7 +123,7 @@ class ArrayRef(Node):
         return tuple(nodelist)
     
     def __str__(self):
-        return "{}[{}]".format(self.name, self.subscript)
+        return "{}[{}]".format(str(self.name), str(self.subscript))
 
     attr_names = ()
 
@@ -161,7 +161,7 @@ class Constant(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return self.value
+        return str(self.value)
 
     attr_names = ('type', 'value', )
 
@@ -180,7 +180,7 @@ class ExprList(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return self.exprs.join("\n")
+        return "\n".join(self.exprs)
     
     attr_names = ()
 
@@ -200,7 +200,7 @@ class FuncCall(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return "{}({})".format(self.name, self.args.join(','))
+        return "{}{}".format(self.name, self.args)
 
     attr_names = ()
 
@@ -279,7 +279,8 @@ class ArgsList(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return "({})".format(self.args.join(", "))
+        args = [str(arg) for arg in self.args]
+        return "({})".format(', '.join(args))
 
     attr_names = ()
 
@@ -343,6 +344,6 @@ class ReturnTuple(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return "({})".format(self.exprs.join(", "))
+        return "({})".format(', '.join([str(expr) for expr in self.exprs]))
   
     attr_names = ()
