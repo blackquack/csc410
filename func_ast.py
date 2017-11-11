@@ -109,22 +109,6 @@ class NodeVisitor(object):
             self.visit(c)
 
 
-# class ArrayDecl(Node):
-#     __slots__ = ('type', 'dim', 'coord', '__weakref__')
-#     def __init__(self, type, dim, coord=None):
-#         self.type = type
-#         self.dim = dim
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.type is not None: nodelist.append(("type", self.type))
-#         if self.dim is not None: nodelist.append(("dim", self.dim))
-#         return tuple(nodelist)
-
-#     attr_names = ('dim_quals', )
-
-
 class ArrayRef(Node):
     __slots__ = ('name', 'subscript', 'coord', '__weakref__')
     def __init__(self, name, subscript, coord=None):
@@ -137,23 +121,11 @@ class ArrayRef(Node):
         if self.name is not None: nodelist.append(("name", self.name))
         if self.subscript is not None: nodelist.append(("subscript", self.subscript))
         return tuple(nodelist)
+    
+    def __str__(self):
+        return "{}[{}]".format(str(self.name), str(self.subscript))
 
     attr_names = ()
-
-
-class Assignment(Node):
-    __slots__ = ('lvalue', 'rvalue', 'coord', '__weakref__')
-
-    def __init__(self, lvalue, rvalue, coord=None):
-        self.lvalue = lvalue
-        self.rvalue = rvalue
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        if self.lvalue is not None: nodelist.append(("lvalue", self.lvalue))
-        if self.rvalue is not None: nodelist.append(("rvalue", self.rvalue))
-        return tuple(nodelist)
 
 
 class BinaryOp(Node):
@@ -171,30 +143,16 @@ class BinaryOp(Node):
         if self.right is not None: nodelist.append(("right", self.right))
         return tuple(nodelist)
 
+    def __str__(self):
+        return "{} {} {}".format(self.left, self.op, self.right)
+
     attr_names = ('op', )
 
 
-# class Block(Node):
-#     __slots__ = ('block_items', 'coord', '__weakref__')
-
-#     def __init__(self, block_items, coord=None):
-#         self.block_items = block_items
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         for i, child in enumerate(self.block_items or []):
-#             nodelist.append(("block_items[%d]" % i, child))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
 class Constant(Node):
-    __slots__ = ('type', 'value', 'coord', '__weakref__')
+    __slots__ = ('value', 'coord', '__weakref__')
 
-    def __init__(self, type, value, coord=None):
-        self.type = type
+    def __init__(self , value, coord=None):
         self.value = value
         self.coord = coord
 
@@ -202,71 +160,10 @@ class Constant(Node):
         nodelist = []
         return tuple(nodelist)
 
+    def __str__(self):
+        return str(self.value)
+
     attr_names = ('type', 'value', )
-
-
-# class Decl(Node):
-#     __slots__ = ('name', 'funcspec', 'type', 'init', 'coord', '__weakref__')
-
-#     def __init__(self, name, funcspec, type, init, coord=None):
-#         self.name = name
-#         self.funcspec = funcspec
-#         self.type = type
-#         self.init = init
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.type is not None: nodelist.append(("type", self.type))
-#         if self.init is not None: nodelist.append(("init", self.init))
-#         return tuple(nodelist)
-
-#     attr_names = ('name', 'funcspec', )
-
-
-# class DeclList(Node):
-#     __slots__ = ('decls', 'coord', '__weakref__')
-
-#     def __init__(self, decls, coord=None):
-#         self.decls = decls
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         for i, child in enumerate(self.decls or []):
-#             nodelist.append(("decls[%d]" % i, child))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
-
-# class DoWhile(Node):
-#     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')
-
-#     def __init__(self, cond, stmt, coord=None):
-#         self.cond = cond
-#         self.stmt = stmt
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.cond is not None: nodelist.append(("cond", self.cond))
-#         if self.stmt is not None: nodelist.append(("stmt", self.stmt))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
-class EmptyStatement(Node):
-    __slots__ = ('coord', '__weakref__')
-    def __init__(self, coord=None):
-        self.coord = coord
-
-    def children(self):
-        return ()
-
-    attr_names = ()
 
 
 class ExprList(Node):
@@ -282,44 +179,10 @@ class ExprList(Node):
             nodelist.append(("exprs[%d]" % i, child))
         return tuple(nodelist)
 
+    def __str__(self):
+        return "\n".join(self.exprs)
+    
     attr_names = ()
-
-
-# class FileAST(Node):
-#     __slots__ = ('ext', 'coord', '__weakref__')
-
-#     def __init__(self, ext, coord=None):
-#         self.ext = ext
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         for i, child in enumerate(self.ext or []):
-#             nodelist.append(("ext[%d]" % i, child))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
-# class For(Node):
-#     __slots__ = ('init', 'cond', 'next', 'stmt', 'coord', '__weakref__')
-
-#     def __init__(self, init, cond, next, stmt, coord=None):
-#         self.init = init
-#         self.cond = cond
-#         self.next = next
-#         self.stmt = stmt
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.init is not None: nodelist.append(("init", self.init))
-#         if self.cond is not None: nodelist.append(("cond", self.cond))
-#         if self.next is not None: nodelist.append(("next", self.next))
-#         if self.stmt is not None: nodelist.append(("stmt", self.stmt))
-#         return tuple(nodelist)
-
-#     attr_names = ()
 
 
 class FuncCall(Node):
@@ -336,42 +199,30 @@ class FuncCall(Node):
         if self.args is not None: nodelist.append(("args", self.args))
         return tuple(nodelist)
 
-    attr_names = ()
-
-
-class FuncDecl(Node):
-    __slots__ = ('args', 'type', 'coord', '__weakref__')
-
-    def __init__(self, args, type, coord=None):
-        self.args = args
-        self.type = type
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        if self.args is not None: nodelist.append(("args", self.args))
-        if self.type is not None: nodelist.append(("type", self.type))
-        return tuple(nodelist)
+    def __str__(self):
+        return "{}{}".format(self.name, self.args)
 
     attr_names = ()
 
 
 class FuncDef(Node):
-    __slots__ = ('decl', 'param_decls', 'body', 'coord', '__weakref__')
+    __slots__ = ('input_args', 'output_vars', 'body', 'coord', '__weakref__')
 
-    def __init__(self, decl, param_decls, body, coord=None):
-        self.decl = decl
-        self.param_decls = param_decls
+    def __init__(self, input_args, output_vars, body, coord=None):
+        self.input_args = input_args
+        self.output_vars = output_vars
         self.body = body
         self.coord = coord
 
     def children(self):
         nodelist = []
-        if self.decl is not None: nodelist.append(("decl", self.decl))
         if self.body is not None: nodelist.append(("body", self.body))
-        for i, child in enumerate(self.param_decls or []):
-            nodelist.append(("param_decls[%d]" % i, child))
+        if self.input_args is not None: nodelist.append(("args", self.input_args))
+        if self.output_vars is not None: nodelist.append(("return", self.output_vars))
         return tuple(nodelist)
+
+    def __str__(self):
+        return "fun code_block{} return {} \n {}".format(self.input_args, self.output_vars, self.body)
 
     attr_names = ()
 
@@ -387,20 +238,10 @@ class ID(Node):
         nodelist = []
         return tuple(nodelist)
 
+    def __str__(self):
+        return self.name
+
     attr_names = ('name', )
-
-
-class IdentifierType(Node):
-    __slots__ = ('names', 'coord', '__weakref__')
-    def __init__(self, names, coord=None):
-        self.names = names
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        return tuple(nodelist)
-
-    attr_names = ('names', )
 
 
 class If(Node):
@@ -418,15 +259,83 @@ class If(Node):
         if self.iffalse is not None: nodelist.append(("iffalse", self.iffalse))
         return tuple(nodelist)
 
+    def __str__(self):
+        return "if {} then {} else {}".format(self.cond, self.iftrue, self.iffalse)
+
     attr_names = ()
 
 
-class InitList(Node):
-    __slots__ = ('exprs', 'coord', '__weakref__')
+class ArgsList(Node):
+    __slots__ = ('args', 'coord', '__weakref__')
+
+    def __init__(self, args, coord=None):
+        self.args = args
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        for i, child in enumerate(self.args or []):
+            nodelist.append(("args[%d]" % i, child))
+        return tuple(nodelist)
+
+    def __str__(self):
+        args = [str(arg) for arg in self.args]
+        return "({})".format(', '.join(args))
+
+    attr_names = ()
+
+
+class Binding(Node):
+    __slots__ = ('id', 'expr1', 'expr2', 'coord', '__weakref__')
+
+    def __init__(self, id, expr1, expr2, coord=None):
+        self.id = id
+        self.expr1 = expr1
+        self.expr2 = expr2
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.id is not None: nodelist.append(("id", self.id))
+        if self.expr1 is not None: nodelist.append(("expr", self.expr1))
+        if self.expr2 is not None: nodelist(("expr", self.expr2))
+        return tuple(nodelist)
+    
+    def __str__(self):
+        return "let {} = {} in {}".format(self.id, self.expr1, self.expr2)
+
+    attr_names = ()
+
+
+class RecursiveFunction(Node):
+    __slots__ = ('id', 'args', 'expr1', 'expr2', 'coord', '__weakref__')
+
+    def __init__(self, id, args, expr1, expr2, coord=None):
+        self.id = id
+        self.args = args
+        self.expr1 = expr1
+        self.expr2 = expr2
+        self.coord = coord
+  
+    def children(self):
+        nodelist = []
+        if self.id is not None: nodelist.append(("id", self.expr1))
+        if self.args is not None: nodelist.append(("args", self.args))
+        if self.expr1 is not None: nodelist.append(("expr", self.args))
+        if self.expr2 is not None: nodelist(("expr", self.expr2))
+        return tuple(nodelist)
+  
+    def __str__(self):
+        return "letrec {} {} = {} in {}".format(self.id, self.args, self.expr1, self.expr2)
+
+    attr_names = ()
+
+
+class ReturnTuple(Node):
+    __slots__ = ('exprs', 'coord')
 
     def __init__(self, exprs, coord=None):
         self.exprs = exprs
-        self.coord = coord
 
     def children(self):
         nodelist = []
@@ -434,336 +343,7 @@ class InitList(Node):
             nodelist.append(("exprs[%d]" % i, child))
         return tuple(nodelist)
 
-    attr_names = ()
-
-
-# class Label(Node):
-#     __slots__ = ('name', 'stmt', 'coord', '__weakref__')
-
-#     def __init__(self, name, stmt, coord=None):
-#         self.name = name
-#         self.stmt = stmt
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.stmt is not None: nodelist.append(("stmt", self.stmt))
-#         return tuple(nodelist)
-
-#     attr_names = ('name', )
-
-
-class NamedInitializer(Node):
-    __slots__ = ('name', 'expr', 'coord', '__weakref__')
-
-    def __init__(self, name, expr, coord=None):
-        self.name = name
-        self.expr = expr
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        if self.expr is not None: nodelist.append(("expr", self.expr))
-        for i, child in enumerate(self.name or []):
-            nodelist.append(("name[%d]" % i, child))
-        return tuple(nodelist)
-
-    attr_names = ()
-
-
-class ParamList(Node):
-    __slots__ = ('params', 'coord', '__weakref__')
-
-    def __init__(self, params, coord=None):
-        self.params = params
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        for i, child in enumerate(self.params or []):
-            nodelist.append(("params[%d]" % i, child))
-        return tuple(nodelist)
-
-    attr_names = ()
-
-
-# class PtrDecl(Node):
-#     __slots__ = ('type', 'coord', '__weakref__')
-
-#     def __init__(self, ptrtype, coord=None):
-#         self.type = ptrtype
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.type is not None: nodelist.append(("type", self.type))
-#         return tuple(nodelist)
-
-#     attr_names = ('quals', )
-
-
-class Return(Node):
-    __slots__ = ('expr', 'coord', '__weakref__')
-
-    def __init__(self, expr, coord=None):
-        self.expr = expr
-        self.coord = coord
-
-    def children(self):
-        nodelist = []
-        if self.expr is not None: nodelist.append(("expr", self.expr))
-        return tuple(nodelist)
-
-    attr_names = ()
-
-
-# class TernaryOp(Node):
-#     __slots__ = ('cond', 'iftrue', 'iffalse', 'coord', '__weakref__')
-
-#     def __init__(self, cond, iftrue, iffalse, coord=None):
-#         self.cond = cond
-#         self.iftrue = iftrue
-#         self.iffalse = iffalse
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.cond is not None: nodelist.append(("cond", self.cond))
-#         if self.iftrue is not None: nodelist.append(("iftrue", self.iftrue))
-#         if self.iffalse is not None: nodelist.append(("iffalse", self.iffalse))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
-# class Typename(Node):
-#     __slots__ = ('name', 'type', 'coord', '__weakref__')
-
-#     def __init__(self, name, ttype, coord=None):
-#         self.name = name
-#         self.type = ttype
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.type is not None: nodelist.append(("type", self.type))
-#         return tuple(nodelist)
-
-#     attr_names = ('name', )
-
-
-# class TypeDecl(Node):
-#     __slots__ = ('declname', 'type', 'coord', '__weakref__')
-
-#     def __init__(self, declname, ttype, coord=None):
-#         self.declname = declname
-#         self.type = ttype
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.type is not None: nodelist.append(("type", self.type))
-#         return tuple(nodelist)
-
-#     attr_names = ('name', )
-
-
-# class UnaryOp(Node):
-#     __slots__ = ('op', 'expr', 'coord', '__weakref__')
-
-#     def __init__(self, op, expr, coord=None):
-#         self.op = op
-#         self.expr = expr
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.expr is not None: nodelist.append(("expr", self.expr))
-#         return tuple(nodelist)
-
-#     attr_names = ('op', )
-
-
-# class Union(Node):
-#     __slots__ = ('name', 'decls', 'coord', '__weakref__')
-
-#     def __init__(self, name, decls, coord=None):
-#         self.name = name
-#         self.decls = decls
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         for i, child in enumerate(self.decls or []):
-#             nodelist.append(("decls[%d]" % i, child))
-#         return tuple(nodelist)
-
-#     attr_names = ('name', )
-
-class Binding(Node):
-  __slots__ = ('id', 'expr1', 'expr2', 'coord', '__weakref__')
-
-  def __init__(self, id, expr1, expr2, coord=None):
-    self.id = id
-    self.expr1 = expr1
-    self.expr2 = expr2
-    self.coord = coord
+    def __str__(self):
+        return "({})".format(', '.join([str(expr) for expr in self.exprs]))
   
-  def children(self):
-    nodelist = []
-    if self.id is not None: nodelist.append(("id", self.id))
-    if self.expr1 is not None: nodelist.append(("expr", self.expr1))
-    if self.expr2 is not None: nodelist(("expr", self.expr2))
-    return tuple(nodelist)
-
-  attr_names = ()
-
-class RecursiveFunction(Node):
-  __slots__ = ('id', 'args', 'expr1', 'expr2', 'coord', '__weakref__')
-
-  def __init__(self, id, args, expr1, expr2, coord=None):
-    self.id = id
-    self.args = args
-    self.expr1 = expr1
-    self.expr2 = expr2
-    self.coord = coord
-  
-  def children(self):
-    nodelist = []
-    if self.id is not None: nodelist.append(("id", self.expr1))
-    if self.args is not None: nodelist.append(("args", self.args))
-    if self.expr1 is not None: nodelist.append(("expr", self.args))
-    if self.expr2 is not None: nodelist(("expr", self.expr2))
-    return tuple(nodelist)
-  
-  attr_names = ()
-
-class ReturnTuple(Node):
-  __slots__ = ('exprs', 'coord')
-   
-  def __init__(self, exprs, coord=None):
-    self.id = id
-    self.exprs = exprs
-
-  def children(self):
-    nodelist = []
-    for i, child in enumerate(self.exprs or []):
-        nodelist.append(("exprs[%d]" % i, child))
-    return tuple(nodelist)
-  
-  attr_names = ()
-
-
-# class While(Node):
-#     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')
-
-#     def __init__(self, cond, stmt, coord=None):
-#         self.cond = cond
-#         self.stmt = stmt
-#         self.coord = coord
-
-#     def children(self):
-#         nodelist = []
-#         if self.cond is not None: nodelist.append(("cond", self.cond))
-#         if self.stmt is not None: nodelist.append(("stmt", self.stmt))
-#         return tuple(nodelist)
-
-#     attr_names = ()
-
-
-
-
-# class ArrayDecl(Node):
-#     __slots__ = ('type', 'dim', 'dim_quals', 'coord', '__weakref__')
-# class ArrayRef(Node):
-#     __slots__ = ('name', 'subscript', 'coord', '__weakref__')
-# class Assignment(Node):
-#     __slots__ = ('op', 'lvalue', 'rvalue', 'coord', '__weakref__')
-# class BinaryOp(Node):
-#     __slots__ = ('op', 'left', 'right', 'coord', '__weakref__')
-# class Break(Node):
-#     __slots__ = ('coord', '__weakref__')
-# class Case(Node):
-#     __slots__ = ('expr', 'stmts', 'coord', '__weakref__')
-# class Cast(Node):
-#     __slots__ = ('to_type', 'expr', 'coord', '__weakref__')
-# class Compound(Node):
-#     __slots__ = ('block_items', 'coord', '__weakref__')
-# class CompoundLiteral(Node):
-#     __slots__ = ('type', 'init', 'coord', '__weakref__')
-# class Constant(Node):
-#     __slots__ = ('type', 'value', 'coord', '__weakref__')
-# class Continue(Node):
-#     __slots__ = ('coord', '__weakref__')
-# class Decl(Node):
-#     __slots__ = ('name', 'quals', 'storage', 'funcspec', 'type', 'init', 'bitsize', 'coord', '__weakref__')
-# class DeclList(Node):
-#     __slots__ = ('decls', 'coord', '__weakref__')
-# class Default(Node):
-#     __slots__ = ('stmts', 'coord', '__weakref__')
-# class DoWhile(Node):
-#     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')
-# class EllipsisParam(Node):
-#     __slots__ = ('coord', '__weakref__')
-# class EmptyStatement(Node):
-#     __slots__ = ('coord', '__weakref__')
-# class Enum(Node):
-#     __slots__ = ('name', 'values', 'coord', '__weakref__')
-# class Enumerator(Node):
-#     __slots__ = ('name', 'value', 'coord', '__weakref__')
-# class EnumeratorList(Node):
-#     __slots__ = ('enumerators', 'coord', '__weakref__')
-# class ExprList(Node):
-#     __slots__ = ('exprs', 'coord', '__weakref__')
-# class FileAST(Node):
-#     __slots__ = ('ext', 'coord', '__weakref__')
-# class For(Node):
-#     __slots__ = ('init', 'cond', 'next', 'stmt', 'coord', '__weakref__')
-# class FuncCall(Node):
-#     __slots__ = ('name', 'args', 'coord', '__weakref__')
-# class FuncDecl(Node):
-#     __slots__ = ('args', 'type', 'coord', '__weakref__')
-# class FuncDef(Node):
-#     __slots__ = ('decl', 'param_decls', 'body', 'coord', '__weakref__')
-# class Goto(Node):
-#     __slots__ = ('name', 'coord', '__weakref__')
-# class ID(Node):
-#     __slots__ = ('name', 'coord', '__weakref__')
-# class IdentifierType(Node):
-#     __slots__ = ('names', 'coord', '__weakref__')
-# class If(Node):
-#     __slots__ = ('cond', 'iftrue', 'iffalse', 'coord', '__weakref__')
-# class InitList(Node):
-#     __slots__ = ('exprs', 'coord', '__weakref__')
-# class Label(Node):
-#     __slots__ = ('name', 'stmt', 'coord', '__weakref__')
-# class NamedInitializer(Node):
-#     __slots__ = ('name', 'expr', 'coord', '__weakref__')
-# class ParamList(Node):
-#     __slots__ = ('params', 'coord', '__weakref__')
-# class PtrDecl(Node):
-#     __slots__ = ('quals', 'type', 'coord', '__weakref__')
-# class Return(Node):
-#     __slots__ = ('expr', 'coord', '__weakref__')
-# class Struct(Node):
-#     __slots__ = ('name', 'decls', 'coord', '__weakref__')
-# class StructRef(Node):
-#     __slots__ = ('name', 'type', 'field', 'coord', '__weakref__')
-# class Switch(Node):
-#     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')
-# class TernaryOp(Node):
-#     __slots__ = ('cond', 'iftrue', 'iffalse', 'coord', '__weakref__')
-# class TypeDecl(Node):
-#     __slots__ = ('declname', 'quals', 'type', 'coord', '__weakref__')
-# class Typedef(Node):
-#     __slots__ = ('name', 'quals', 'storage', 'type', 'coord', '__weakref__')
-# class Typename(Node):
-#     __slots__ = ('name', 'quals', 'type', 'coord', '__weakref__')
-# class UnaryOp(Node):
-#     __slots__ = ('op', 'expr', 'coord', '__weakref__')
-# class Union(Node):
-#     __slots__ = ('name', 'decls', 'coord', '__weakref__')
-# class While(Node):
-#     __slots__ = ('cond', 'stmt', 'coord', '__weakref__')
-# class Pragma(Node):
-#     __slots__ = ('string', 'coord', '__weakref__')
+    attr_names = ()
