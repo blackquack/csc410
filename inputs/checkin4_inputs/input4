@@ -1,0 +1,10 @@
+if(cond > 0) {
+  if (cond2 < 0) {
+    a = a + 1;
+  } else {
+    a = a + 2;
+  }
+  b = a * a;
+} else {
+  b = c + 2;
+}
