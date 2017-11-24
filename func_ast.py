@@ -222,7 +222,7 @@ class FuncDef(Node):
         return tuple(nodelist)
 
     def __str__(self):
-        return "fun code_block{} return {} \n {}".format(self.input_args, self.output_vars, self.body)
+        return "fun code_block{} return {} = \n {}".format(self.input_args, self.output_vars, self.body)
 
     attr_names = ()
 
@@ -298,7 +298,7 @@ class Binding(Node):
         nodelist = []
         if self.id is not None: nodelist.append(("id", self.id))
         if self.expr1 is not None: nodelist.append(("expr", self.expr1))
-        if self.expr2 is not None: nodelist(("expr", self.expr2))
+        if self.expr2 is not None: nodelist.append(("expr", self.expr2))
         return tuple(nodelist)
     
     def __str__(self):
@@ -336,6 +336,9 @@ class ReturnTuple(Node):
 
     def __init__(self, exprs, coord=None):
         self.exprs = exprs
+
+    def __eq__(self, tup):
+        return isinstance(tup, ReturnTuple) and all([val1 == val2 for val1, val2 in list(zip(self.exprs, tup.exprs))])
 
     def children(self):
         nodelist = []
