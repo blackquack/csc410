@@ -10,3 +10,8 @@ Instructions:
 ```
 python3 checkin4.py.py
 ```
+## Check-in 5
+Instructions:
+```
+python3 checkin5.py.py
+```
