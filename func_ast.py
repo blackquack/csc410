@@ -284,6 +284,25 @@ class ArgsList(Node):
 
     attr_names = ()
 
+class ArgsRecList(Node):
+    __slots__ = ('loop_id', 'args', 'coord', '__weakref__')
+
+    def __init__(self, loop_id, args, coord=None):
+        self.loop_id = loop_id
+        self.args = args
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.loop_id is not None: nodelist.append(("loop_id", self.loop_id))
+        for i, child in enumerate(self.args or []):
+            nodelist.append(("args[%d]" % i, child))
+        return tuple(nodelist)
+
+    def __str__(self):
+        args = [str(arg) for arg in self.args]
+        return "{} {}".format(self.loop_id, ' '.join(args))
+
 
 class Binding(Node):
     __slots__ = ('id', 'expr1', 'expr2', 'coord', '__weakref__')
@@ -310,8 +329,7 @@ class Binding(Node):
 class RecursiveFunction(Node):
     __slots__ = ('id', 'args', 'expr1', 'expr2', 'coord', '__weakref__')
 
-    def __init__(self, id, args, expr1, expr2, coord=None):
-        self.id = id
+    def __init__(self, args, expr1, expr2, coord=None):
         self.args = args
         self.expr1 = expr1
         self.expr2 = expr2
@@ -319,14 +337,13 @@ class RecursiveFunction(Node):
   
     def children(self):
         nodelist = []
-        if self.id is not None: nodelist.append(("id", self.expr1))
         if self.args is not None: nodelist.append(("args", self.args))
-        if self.expr1 is not None: nodelist.append(("expr", self.args))
-        if self.expr2 is not None: nodelist(("expr", self.expr2))
+        if self.expr1 is not None: nodelist.append(("expr1", self.args))
+        if self.expr2 is not None: nodelist(("expr2", self.expr2))
         return tuple(nodelist)
   
     def __str__(self):
-        return "letrec {} {} = {} in {}".format(self.id, self.args, self.expr1, self.expr2)
+        return "let rec {} = {} in {}".format(self.args, self.expr1, self.expr2)
 
     attr_names = ()
 

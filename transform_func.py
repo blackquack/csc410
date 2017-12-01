@@ -13,6 +13,9 @@ class AST_C(NodeVisitor):
     self.head_binding = None
     self.tail_binding = None
 
+    # Number of loops used for naming (default is 0):
+    self.num_loops = 0
+
   def expr(self, _class, value):
     return {
         Constant: (lambda orig: func.Constant(orig.value)),
@@ -40,7 +43,7 @@ class AST_C(NodeVisitor):
     # When the iftrue or iffalse blocks are not None then visit that branch
     # and update the written_set and read_set.
     if not condition.iftrue is None:
-      iftrue_ast = AST_C()
+      iftrue_ast = AST_C(self.simplify)
       iftrue_ast.visit(condition.iftrue)
 
       self.written_set.update(iftrue_ast.written_set)
@@ -48,7 +51,7 @@ class AST_C(NodeVisitor):
       if_written_set.update(iftrue_ast.written_set)
 
     if not condition.iffalse is None:
-      iffalse_ast = AST_C()
+      iffalse_ast = AST_C(self.simplify)
       iffalse_ast.visit(condition.iffalse)
 
       self.written_set.update(iffalse_ast.written_set)
@@ -76,6 +79,63 @@ class AST_C(NodeVisitor):
     # Create functional condition node and binding
     if_expr = func.If(cond_expr, iftrue_expr, iffalse_expr)
     self.__create_binding(lhs, if_expr, None)
+  
+  def visit_For(self, for_loop):
+    # Initialize loop variable
+    self.visit_Assignment(for_loop.init)
+  
+    # Visit loop statement to get all the written variables
+    for_written_set = set()
+    body_ast = AST_C(self.simplify)
+    # Use the current loop number incremented by one if there is a nested loop inside
+    body_ast.set_num_loops(self.num_loops + 1)
+    body_ast.visit(for_loop.stmt)
+    for_written_set.update(body_ast.written_set)
+    self.written_set.update(body_ast.written_set)
+    # The next statement counts as a write
+    for_written_set.update(body_ast.written_set)
+    for_written_set.add(for_loop.next.lvalue.name)
+    increment_id = func.ID(for_loop.next.lvalue.name)
+    increment_expr = self.expr(for_loop.next.rvalue.__class__, for_loop.next.rvalue)
+
+    outer_id = func.ReturnTuple(for_written_set) if len(for_written_set) > 1 else func.ID(next(iter(for_written_set)))
+    inner_id = func.ArgsRecList("loop{}".format(self.num_loops), for_written_set)
+    self.num_loops += 1
+
+    # Use a recursive style if statement to replace loop
+    # If the condition from the loop condition is true, then run the loop body with the increment at the end
+    # Ignore simplfication for now
+    cond = self.expr(for_loop.cond.__class__, for_loop.cond)
+    body_ast.tail_binding.expr2 = func.Binding(increment_id, increment_expr, inner_id)
+    # Otherwise, return the written variables
+    if_expr = func.If(cond, body_ast.head_binding, outer_id)
+    rec_expr = func.RecursiveFunction(inner_id, if_expr, inner_id)
+
+    self.__create_binding(outer_id, rec_expr, None)
+
+  def visit_While(self, while_loop):
+    # Do not need to worry about incrementation and initialization in while loop. Assume they're there and loop can terminate.
+    # Visit loop statement to get all the written variables
+    while_written_set = set()
+    body_ast = AST_C(self.simplify)
+    body_ast.set_num_loops(self.num_loops + 1)
+    body_ast.visit(while_loop.stmt)
+    while_written_set.update(body_ast.written_set)
+    self.written_set.update(body_ast.written_set)
+
+    outer_id = func.ReturnTuple(while_written_set) if len(while_written_set) > 1 else func.ID(next(iter(while_written_set)))
+    inner_id = func.ArgsRecList("loop{}".format(self.num_loops), while_written_set)
+    self.num_loops += 1
+
+    # Use a recursive style if statement to replace loop
+    # If the condition from the loop condition is true, then run the loop body with the increment at the end
+    # Ignore simplfication for now
+    cond = self.expr(while_loop.cond.__class__, while_loop.cond)
+    body_ast.tail_binding.expr2 = inner_id
+    if_expr = func.If(cond, body_ast.head_binding, outer_id)
+    rec_expr = func.RecursiveFunction(inner_id, if_expr, inner_id)
+
+    self.__create_binding(outer_id, rec_expr, None)
 
   def visit_Block(self, block):
     self.generic_visit(block)
@@ -104,7 +164,10 @@ class AST_C(NodeVisitor):
     self.read_set.add(array_ref.name.name)
     self.read_set.add(array_ref.subscript.name)
   
-  def __create_binding(self, lhs, expr1, expr2, simplify=True):
+  def set_num_loops(self, num):
+    self.num_loops = num
+  
+  def __create_binding(self, lhs, expr1, expr2):
     current_binding = func.Binding(lhs, expr1, expr2)
     if self.head_binding is None:
       self.head_binding = current_binding
@@ -174,8 +237,7 @@ class AST_C(NodeVisitor):
             prev.expr2 = curr.expr2
     
         else:
-          prev = curr
-      
+          prev = curr      
 
       # Move to the next binding
       curr = curr.expr2
