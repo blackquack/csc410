@@ -16,5 +16,5 @@ if __name__ == "__main__":
       print("File: {} \nInput:".format(filename))
       with open(os.path.join(directory_path, filename), 'r') as fin:
         print(fin.read())
-      ftranslator = FunctionalTranslator(mast, True)
+      ftranslator = FunctionalTranslator(mast, False)
       print("Output:\n{}\n----------".format(ftranslator))
