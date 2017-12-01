@@ -8,15 +8,15 @@ This will run against all the inputs in the `inputs/checkin3_inputs` directory. 
 ## Check-in 4
 Instructions:
 ```
-python3 checkin4.py.py
+python3 checkin4.py
 ```
 ## Check-in 5
 Instructions:
 ```
-python3 checkin5.py.py
+python3 checkin5.py
 ```
 ## Check-in 6
 Instructions:
 ```
-python3 checkin6.py.py
+python3 checkin6.py
 ```
