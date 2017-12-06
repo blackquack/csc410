@@ -1,9 +1,11 @@
+import sys
+import os
+sys.path.extend(['.', '..'])
+
 from pycparser import parse_file
 from minic.c_ast_to_minic import transform
 from transform_func import *
 from func_utils import function_wrapper
-import sys
-import os
 
 if __name__ == "__main__":
   directory_path = "./inputs/checkin6_inputs"
