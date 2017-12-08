@@ -3,8 +3,8 @@ import func_ast as func
 
 class AST_C(NodeVisitor):
   def __init__(self, simplify=True):
-    self.written_set = set()
-    self.read_set = set()
+    self.written_set = list()
+    self.read_set = list()
     self.simplify = simplify
 
     # Keep track of the head binding and tail binding. For example
@@ -27,14 +27,24 @@ class AST_C(NodeVisitor):
         FuncCall: (lambda orig: func.FuncCall(
           self.expr(orig.name.__class__, orig.name), 
           self.expr(orig.args.__class__, orig.args))),
+        UnaryOp: (lambda orig: func.UnaryOp(
+          orig.op,
+          self.expr(orig.expr.__class__, orig.expr)
+        )),
         BinaryOp: (lambda orig: func.BinaryOp(orig.op, 
           self.expr(orig.left.__class__ , orig.left), 
-          self.expr(orig.right.__class__, orig.right)))      
+          self.expr(orig.right.__class__, orig.right))),
+        TernaryOp: (lambda orig: func.If(
+          self.expr(orig.cond.__class__, orig.cond), 
+          self.expr(orig.iftrue.__class__, orig.iftrue),
+          self.expr(orig.iffalse.__class__, orig.iffalse)
+        ))
       }.get(_class)(value)
   
   def visit_If(self, condition):
     # Get condition
     cond_expr = self.expr(condition.cond.__class__, condition.cond)
+    self.visit(condition.cond)
 
     iftrue_ast = None
     iffalse_ast = None
@@ -46,16 +56,16 @@ class AST_C(NodeVisitor):
       iftrue_ast = AST_C(self.simplify)
       iftrue_ast.visit(condition.iftrue)
 
-      self.written_set.update(iftrue_ast.written_set)
-      self.read_set.update(iftrue_ast.read_set)
+      self.written_set +=  iftrue_ast.written_set 
+      self.read_set += iftrue_ast.read_set
       if_written_set.update(iftrue_ast.written_set)
 
     if not condition.iffalse is None:
       iffalse_ast = AST_C(self.simplify)
       iffalse_ast.visit(condition.iffalse)
 
-      self.written_set.update(iffalse_ast.written_set)
-      self.read_set.update(iffalse_ast.read_set)
+      self.written_set += iffalse_ast.written_set
+      self.read_set += iffalse_ast.read_set
       if_written_set.update(iffalse_ast.written_set)
     
     # Create functional node
@@ -67,14 +77,12 @@ class AST_C(NodeVisitor):
     if condition.iftrue is None:
       iftrue_expr = lhs
     else:
-      # iftrue_ast.tail_binding.expr2 = lhs
-      iftrue_expr = self.simplify_binding(iftrue_ast.head_binding, if_written_set)
+      iftrue_expr = self.simplify_binding(iftrue_ast.head_binding, iftrue_ast.written_set, iftrue_ast.read_set, if_written_set)
     
     if condition.iffalse is None:
       iffalse_expr = lhs
     else:
-      # iffalse_ast.tail_binding.expr2 = lhs
-      iffalse_expr = self.simplify_binding(iffalse_ast.head_binding, if_written_set)
+      iffalse_expr = self.simplify_binding(iffalse_ast.head_binding, iffalse_ast.written_set, iffalse_ast.read_set, if_written_set)
     
     # Create functional condition node and binding
     if_expr = func.If(cond_expr, iftrue_expr, iffalse_expr)
@@ -91,12 +99,15 @@ class AST_C(NodeVisitor):
     body_ast.set_num_loops(self.num_loops + 1)
     body_ast.visit(for_loop.stmt)
     for_written_set.update(body_ast.written_set)
-    self.written_set.update(body_ast.written_set)
+    self.written_set += body_ast.written_set
+    self.read_set += body_ast.read_set
     # The next statement counts as a write
     for_written_set.update(body_ast.written_set)
     for_written_set.add(for_loop.next.lvalue.name)
     increment_id = func.ID(for_loop.next.lvalue.name)
     increment_expr = self.expr(for_loop.next.rvalue.__class__, for_loop.next.rvalue)
+    self.written_set.append(for_loop.next.lvalue.name)
+    self.written_set.append(for_loop.next.lvalue.name)
 
     outer_id = func.ReturnTuple(for_written_set) if len(for_written_set) > 1 else func.ID(next(iter(for_written_set)))
     inner_id = func.ArgsRecList("loop{}".format(self.num_loops), for_written_set)
@@ -121,8 +132,8 @@ class AST_C(NodeVisitor):
     body_ast.set_num_loops(self.num_loops + 1)
     body_ast.visit(while_loop.stmt)
     while_written_set.update(body_ast.written_set)
-    self.written_set.update(body_ast.written_set)
-
+    self.written_set += body_ast.written_set
+    self.read_set += body_ast.read_set
     outer_id = func.ReturnTuple(while_written_set) if len(while_written_set) > 1 else func.ID(next(iter(while_written_set)))
     inner_id = func.ArgsRecList("loop{}".format(self.num_loops), while_written_set)
     self.num_loops += 1
@@ -147,10 +158,15 @@ class AST_C(NodeVisitor):
 
     if isinstance(assignment.lvalue, ID):
       written_var = func.ID(assignment.lvalue.name)
-      self.written_set.add(assignment.lvalue.name)
+      self.written_set.append(assignment.lvalue.name)
     else:
-      written_var = func.ArrayRef(assignment.lvalue.name.name, assignment.lvalue.subscript.name)
-      self.written_set.add(assignment.lvalue.name.name)
+      written_var = self.expr(assignment.lvalue.__class__, assignment.lvalue)
+      # Written Variable is the array name, all the subscripts are read
+      self.visit_ArrayRef(assignment.lvalue)
+      expr = assignment.lvalue
+      while not isinstance(expr, ID):
+        expr = expr.name
+      self.written_set.append(expr.name)
 
     self.__create_binding(written_var, expr1, None)
 
@@ -158,11 +174,14 @@ class AST_C(NodeVisitor):
     self.generic_visit(binaryop)
     
   def visit_ID(self, id):
-    self.read_set.add(id.name)
+    self.read_set.append(id.name)
 
   def visit_ArrayRef(self, array_ref):
-    self.read_set.add(array_ref.name.name)
-    self.read_set.add(array_ref.subscript.name)
+    if isinstance(array_ref.name, ID):
+      self.visit_ID(array_ref.name)
+    else:
+      self.visit_ArrayRef(array_ref.name)
+    self.visit(array_ref.subscript)
   
   def set_num_loops(self, num):
     self.num_loops = num
@@ -175,67 +194,50 @@ class AST_C(NodeVisitor):
       self.tail_binding.expr2 = current_binding
     self.tail_binding = current_binding
 
-  def simplify_binding(self, binding, return_list):
+  def simplify_binding(self, binding, read_set, write_set, return_list):
     head = binding
     prev = None
     curr = binding
     replace = {}
     while isinstance(curr, func.Binding):
-      if isinstance(curr.expr1, func.If):
+      # Since we simplify the inner body of if statements and loops first, skip this.
+      if isinstance(curr.expr1, func.If) or isinstance(curr.expr1, func.RecursiveFunction):
+        prev = curr
+      
+      # Skip array refs for now
+      elif isinstance(curr.id, func.ArrayRef):
         prev = curr
 
-      if isinstance(curr.id, func.ID):
+      elif isinstance(curr.id, func.ID):
         # Use FunctionalVistor to replace the variables with constants.
         f_visitor = FunctionalVisitor(curr.expr1, replace)
 
-        # If the expr1 is a let binding, simplify that binding as well.
-        # Don't worry about this yet
-        # if isinstance(curr.expr1, func.Binding):
-        #     curr.expr1 = simplify_binding(curr.expr1)
-
-        # If expr1 is just an expression without any variables, then take out the binding.
-        if not f_visitor.var_set:
-          replace[curr.id.name] = curr.expr1
-          if prev is None:
-            if not curr.expr2 is None:
-              head = curr.expr2
-          else:                
-            prev.expr2 = curr.expr2
-
         # If the variable in expr1 does not appear until the end of the return tuple, then take out the binding.
-        elif not curr.id.name in self.read_set:
+        if read_set.count(curr.id.name) <= 1:
           f_visitor = FunctionalVisitor(curr.expr1)
           
           # Check if there are any variables in expr1 that are in the written set. If there aren't, then
           # get rid of the binding and set the return tuple variable to the expression.
-          if len([var for var in f_visitor.var_set if var in self.written_set]) == 0:
+          if all([write_set.count(var) <= 1 for var in f_visitor.var_set]):
             replace[curr.id.name] = curr.expr1
             if prev is None:
               if not curr.expr2 is None:
                 head = curr.expr2
             else:                
               prev.expr2 = curr.expr2
+          
+           # If expr1 is just an expression without any variables, then take out the binding.
+          elif not f_visitor.var_set:
+            replace[curr.id.name] = curr.expr1
+            if prev is None:
+              if not curr.expr2 is None:
+                head = curr.expr2
+            else:                
+              prev.expr2 = curr.expr2 
+
           else:
             prev = curr
 
-        # If expr1 is just a variable and it is is the same as the lhs, then simply take out the binding.
-        elif isinstance(curr.expr1, func.ID) and curr.expr1.name == curr.id.name:
-          replace[curr.id.name] = curr.expr1
-          if prev is None:
-            if not curr.expr2 is None:
-              head = curr.expr2
-          else:
-            prev.expr2 = curr.expr2
-
-        # If expr1 is just a constant, then simply take out the binding.
-        elif isinstance(curr.expr1, func.Constant):
-          replace[curr.id.name] = curr.expr1
-          if prev is None:
-            if not curr.expr2 is None:
-              head = curr.expr2
-          else:
-            prev.expr2 = curr.expr2
-    
         else:
           prev = curr      
 
@@ -255,13 +257,13 @@ class AST_C(NodeVisitor):
 
   # Transforms minic block into func_ast starting with FuncDef as parent node
   def transform(self):
-    args_list = func.ArgsList(self.read_set.union(self.written_set))
-    return_list = list(self.written_set)
+    args_list = func.ArgsList(set(self.read_set + self.written_set))
+    return_list = set(self.written_set)
     return_tuple = func.ReturnTuple(return_list)
     # For now only worry about let id = ... in ...
 
     if self.simplify:
-      self.head_binding = self.simplify_binding(self.head_binding, return_list)
+      self.head_binding = self.simplify_binding(self.head_binding, self.written_set, self.read_set, return_list)
     else:
       self.tail_binding.expr2 = return_tuple
     
@@ -285,7 +287,7 @@ class FunctionalVisitor(NodeVisitor):
   
   def visit_ArrayRef(self, arrayref):
     if not self.replace is None:
-      if arrayref.subscript.name in self.replace:
+      if isinstance(arrayref.subscript, func.ID) and arrayref.subscript.name in self.replace:
         binaryop.subscript = func.Constant(self.replace[arrayref.subscript.name])
 
     self.generic_visit(arrayref)

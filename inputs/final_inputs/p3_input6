@@ -4,7 +4,7 @@ for(i=0; i<n; i++){
 		c[j] = 0;
       } else {
 		p = min (c[j-1], c[j]);
-		if (b[i-p, j-p] !=0) {
+		if (b[i-p][j-p] !=0) {
 	  		c[j] = p;
 		} else {
 	  		c[j] = p+1;

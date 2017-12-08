@@ -111,10 +111,17 @@ class NodeVisitor(object):
 
 class ArrayRef(Node):
     __slots__ = ('name', 'subscript', 'coord', '__weakref__')
+
     def __init__(self, name, subscript, coord=None):
         self.name = name
         self.subscript = subscript
         self.coord = coord
+
+    # def __eq__(self, array_ref):
+    #     return isinstance(array_ref, ArrayRef) and self.name == array_ref.name and self.subscript and array_ref.subscript
+
+    # def __hash__(self):
+    #     return hash(str(self))
 
     def children(self):
         nodelist = []
@@ -123,9 +130,27 @@ class ArrayRef(Node):
         return tuple(nodelist)
     
     def __str__(self):
-        return "{}[{}]".format(str(self.name), str(self.subscript))
+        return "{}[{}]".format(str(self.name), self.subscript)
 
     attr_names = ()
+
+class UnaryOp(Node):
+    __slots__ = ('op', 'expr', 'coord', '__weakref__')
+
+    def __init__(self, op, expr, coord=None):
+        self.op = op
+        self.expr = expr
+        self.coord = coord
+
+    def children(self):
+        nodelist = []
+        if self.expr is not None: nodelist.append(("expr", self.expr))
+        return tuple(nodelist)
+
+    def __str__(self):
+        return "{}{}".format(self.op, self.expr)
+
+    attr_names = ('op', )
 
 
 class BinaryOp(Node):
@@ -237,6 +262,12 @@ class ID(Node):
     def children(self):
         nodelist = []
         return tuple(nodelist)
+
+    # def __eq__(self, id):
+    #     return isinstance(id, ID) and self.name == id.name
+
+    # def __hash__(self):
+    #     return hash(str(self))
 
     def __str__(self):
         return self.name

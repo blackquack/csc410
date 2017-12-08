@@ -20,3 +20,10 @@ Instructions:
 ```
 python3 checkin6.py
 ```
+## Final Submission 
+Instructions:
+```
+python3 run.py
+```
+The report.pdf is also listed in the root directory. 
+
