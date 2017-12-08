@@ -10,7 +10,7 @@ from func_utils import function_wrapper
 def get_output(directory_path):
   output_c = function_wrapper(directory_path)
   mast = transform(parse_file(output_c))
-  print("File: {} \nInput:".format(directory_path.split('/'[-1])))
+  print("File: {} \nInput:".format(directory_path.split('/')[-1]))
   with open(directory_path, 'r') as fin:
     print(fin.read())
   ftranslator = FunctionalTranslator(mast, True)
